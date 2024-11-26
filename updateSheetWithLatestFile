@@ -1,0 +1,45 @@
+function updateSheetWithLatestFile() {
+  var folderId = '1y4A1ZlZ3RlHoKLGD-cdt7veMKkKtPY-j';  // ID de la carpeta donde están los archivos de Google Sheets
+  var targetSheetId = '16QH64ladRFHsXT-gLVZVLipCJYyg_foMMOIfxGNBOSg';  // ID del archivo de Google Sheets de destino
+  var targetSheetName = 'DataBMC';  // Nombre de la hoja de destino
+
+  // Buscar el archivo más reciente en la carpeta
+  var folder = DriveApp.getFolderById(folderId);
+  var files = folder.getFiles(); 
+  var latestFile = null;
+  var latestDate = 0;
+
+  while (files.hasNext()) {
+    var file = files.next();
+    if (file.getMimeType() === MimeType.GOOGLE_SHEETS) {  // Asegurarse de que sea un archivo Google Sheets
+      var fileDate = file.getLastUpdated().getTime();
+      if (fileDate > latestDate) {
+        latestDate = fileDate;
+        latestFile = file;
+      }
+    }
+  }
+
+  // Si encontramos el archivo más reciente, proceder con la actualización
+  if (latestFile) {
+    var latestFileId = latestFile.getId();
+    var ss = SpreadsheetApp.openById(latestFileId);  // Abre el archivo más reciente
+    var sourceSheet = ss.getSheets()[0];  // Usa la primera hoja de este archivo (puedes cambiar esto si es necesario)
+
+    // Lee los datos del rango específico de la hoja de origen
+    var sourceRange = sourceSheet.getRange('A1:V');  // Rango específico de A1 a P
+    var data = sourceRange.getValues(); 
+
+    // Abre el archivo de destino y la hoja
+    var targetSS = SpreadsheetApp.openById(targetSheetId);
+    var targetSheet = targetSS.getSheetByName(targetSheetName);
+
+    // Limpia solo el rango donde se van a pegar los datos
+    targetSheet.getRange('A1:T').clearContent();  
+
+    // Copia los datos en el rango correspondiente de la hoja de destino
+    targetSheet.getRange(1, 1, data.length, data[0].length).setValues(data);  // Copia los datos desde la celda A1 hacia abajo
+  } else {
+    Logger.log("No se encontró un archivo válido en la carpeta.");
+  }
+}
