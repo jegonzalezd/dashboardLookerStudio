@@ -1,0 +1,37 @@
+function arrastrarFormulas() {
+  // ID del archivo de Google Sheets
+  var archivoId = '16QH64ladRFHsXT-gLVZVLipCJYyg_foMMOIfxGNBOSg';
+  
+  // Nombre de la hoja que deseas modificar
+  var nombreHoja = 'DataBMC';
+  
+  // Obtén el documento y la hoja específica
+  var hoja = SpreadsheetApp.openById(archivoId).getSheetByName(nombreHoja);
+  
+  // Verifica si la hoja existe
+  if (!hoja) {
+    Logger.log(`La hoja "${nombreHoja}" no fue encontrada.`);
+    return;
+  }
+
+  // Obtener la última fila con datos en la columna A
+  var ultimaFila = hoja.getLastRow();
+  
+  // Si no hay filas suficientes, salir de la función
+  if (ultimaFila < 2) {
+    Logger.log("No hay suficientes filas para copiar las fórmulas.");
+    return;
+  }
+
+  // Definir el rango de origen (U2:AH2)
+  var rangoOrigen = hoja.getRange("W2:AK2");
+  
+  // Determinar el rango de destino si hay filas adicionales
+  if (ultimaFila > 2) {
+    var rangoDestino = hoja.getRange(3, 23, ultimaFila - 2, 14); // Desde U3 hasta AH en la última fila
+    rangoOrigen.copyTo(rangoDestino, SpreadsheetApp.CopyPasteType.PASTE_FORMULA, false);
+    Logger.log(`Fórmulas copiadas desde W2:AK2 hasta la fila ${ultimaFila}`);
+  } else {
+    Logger.log("No hay suficientes filas para copiar las fórmulas.");
+  }
+}
