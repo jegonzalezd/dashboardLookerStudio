@@ -1,0 +1,31 @@
+function convertExcelToSheets() {
+  var folder = DriveApp.getFolderById('1y4A1ZlZ3RlHoKLGD-cdt7veMKkKtPY-j'); // Coloca el ID de la carpeta donde tienes el archivo Excel
+  var files = folder.getFilesByType(MimeType.MICROSOFT_EXCEL);
+  
+  while (files.hasNext()) {
+    var file = files.next();
+    var fileName = file.getName();
+    
+    // Convertir el archivo Excel a Google Sheets usando la API avanzada de Drive
+    var resource = {
+      title: fileName.replace('.xlsx', '') + '_Converted',
+      mimeType: MimeType.GOOGLE_SHEETS
+    };
+    
+    // Copiar y convertir el archivo
+    var convertedFile = Drive.Files.copy(resource, file.getId(), {convert: true});
+    var sheetFile = DriveApp.getFileById(convertedFile.id);
+    
+    // Abrir el archivo convertido como un objeto Spreadsheet
+    var spreadsheet = SpreadsheetApp.openById(convertedFile.id);
+    
+    // Establecer la zona horaria del archivo a Bogotá (GMT-5)
+    spreadsheet.setSpreadsheetTimeZone("America/Bogota");
+    
+    // Renombrar el archivo de Google Sheets para que sea más fácil de identificar
+    sheetFile.setName(fileName.replace('.xlsx', '') + '_Converted');
+    
+    // Eliminar el archivo original de Excel
+    file.setTrashed(true);
+  }
+}
