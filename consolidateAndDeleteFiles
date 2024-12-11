@@ -1,0 +1,74 @@
+function consolidateAndDeleteFiles() {
+  // ID de la carpeta en Google Drive donde están los archivos
+  var folderId = "1BZOsgApcaLf0V7u-Gc12M2pviY67ZFmO"; // Reemplaza con el ID de tu carpeta
+  var folder = DriveApp.getFolderById(folderId);
+
+  // Nombres de archivos a buscar en el orden que deseas consolidar
+  var fileNames = [
+    "Backlog INC_Converted",   // Archivo 1
+    "Backlog WO_Converted",   // Archivo 2
+  ];
+
+  // Crear un nuevo archivo de Google Sheets para el consolidado
+  var newSpreadsheet = SpreadsheetApp.create("Consolidado Reporte Backlog");
+  var destinationSheet = newSpreadsheet.getActiveSheet();
+  destinationSheet.setName("Consolidado");
+
+  var lastRow = 1; // Variable para llevar la cuenta de la última fila pegada
+  var isFirstFile = true; // Bandera para saber si es el primer archivo
+
+  // Recorrer la lista de nombres en el orden que se requiere
+  for (var i = 0; i < fileNames.length; i++) {
+    var files = folder.getFilesByName(fileNames[i]);
+
+    // Si se encuentra un archivo con el nombre específico
+    if (files.hasNext()) {
+      var file = files.next();
+      
+      // Verificar que el archivo sea un Google Sheets
+      if (file.getMimeType() === MimeType.GOOGLE_SHEETS) {
+        try {
+          // Abrir el archivo de Google Sheets
+          var sourceSpreadsheet = SpreadsheetApp.openById(file.getId());
+          var sourceSheet = sourceSpreadsheet.getSheets()[0]; // Asume que tiene solo una hoja
+
+          // Obtener los datos de la hoja origen
+          var data = sourceSheet.getDataRange().getValues();
+
+          // Si no es el primer archivo, eliminar la primera fila (encabezado)
+          if (!isFirstFile) {
+            data.shift();
+          } else {
+            isFirstFile = false;
+          }
+
+          // Asegurarse de que los datos se ajusten al rango de columnas A:P
+          var maxColumns = 16; // Columnas A a P (16 columnas)
+          data = data.map(row => row.slice(0, maxColumns)); // Limitar a 16 columnas si hay más
+
+          // Pegar datos en la hoja destino
+          destinationSheet.getRange(lastRow, 1, data.length, data[0].length).setValues(data);
+
+          // Actualizar la última fila utilizada
+          lastRow += data.length;
+
+          // Eliminar el archivo original después de consolidarlo
+          file.setTrashed(true);
+          Logger.log("Archivo eliminado: " + fileNames[i]);
+
+        } catch (error) {
+          Logger.log("Error al procesar el archivo: " + fileNames[i] + ". Detalle: " + error.message);
+        }
+      }
+    } else {
+      Logger.log("No se encontró el archivo con el nombre: " + fileNames[i]);
+    }
+  }
+
+  // Mover el nuevo archivo a la misma carpeta
+  var newFile = DriveApp.getFileById(newSpreadsheet.getId());
+  folder.addFile(newFile);  // Añadir el archivo a la carpeta
+  DriveApp.getRootFolder().removeFile(newFile); // Eliminar de la carpeta raíz
+
+  Logger.log("Consolidación completada en la hoja nueva: " + newSpreadsheet.getUrl());
+}
