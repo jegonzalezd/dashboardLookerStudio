@@ -1,0 +1,44 @@
+function saveAttachmentsToDrive() {
+  // Dirección del remitente
+  var sender = "noreply-bmchelix@onbmc.com";
+  
+  // Lista de asuntos que quieres buscar
+  var subjects = ["Backlog INC","Backlog WO"];
+  
+  // Reemplaza con el ID de tu carpeta de Google Drive
+  var folder = DriveApp.getFolderById('1BZOsgApcaLf0V7u-Gc12M2pviY67ZFmO');
+  
+  // Recorre cada asunto en la lista
+  for (var i = 0; i < subjects.length; i++) {
+    var subject = subjects[i];
+    
+    // Búsqueda de correos no leídos en la carpeta de Recibidos con los criterios establecidos
+    var threads = GmailApp.search('from:' + sender + ' subject:"' + subject + '" has:attachment is:unread in:inbox');
+    
+    // Procesar cada hilo encontrado
+    for (var j = 0; j < threads.length; j++) {
+      var messages = threads[j].getMessages();
+      
+      // Selecciona el último mensaje del hilo (el más reciente)
+      var message = messages[messages.length - 1];
+      
+      // Recorre los archivos adjuntos del mensaje
+      var attachments = message.getAttachments();
+      for (var k = 0; k < attachments.length; k++) {
+        var file = attachments[k];
+        
+        // Verifica si el archivo tiene la extensión .xlsx
+        if (file.getName().endsWith('.xlsx')) {
+          // Guarda el archivo .xlsx en la carpeta de Google Drive
+          folder.createFile(file);
+        }
+      }
+      
+      // Marca el mensaje como leído
+      message.markRead();
+      
+      // Mueve el mensaje a la papelera
+      message.moveToTrash();
+    }
+  }
+}
